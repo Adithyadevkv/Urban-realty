@@ -31,7 +31,7 @@ public class BookingSummaryEmail {
 
         Messaging.SingleEmailMessage mail = new Messaging.SingleEmailMessage();
 
-        mail.setToAddresses(new String[] {'your-email@gmail.com'});
+        mail.setToAddresses(new String[] {'adithyadev@metadatacorp.com'});
         mail.setSubject('Daily Booking Summary Report');
         mail.setPlainTextBody(body);
 

@@ -1,14 +1,13 @@
 public class BookingTriggerHandler {
 
-    public static void createInvoices(List<Booking__c> newBookings) {
+    public static void createInvoices(List<Booking__c> newBookings, Map<Id, Booking__c> oldMap) {
 
         List<Invoice__c> invoicesToInsert = new List<Invoice__c>();
-
         Set<Id> propertyIds = new Set<Id>();
 
-        for (Booking__c booking : newBookings) {
-            if (booking.Status__c == 'Confirmed' && booking.Property__c != null) {
-                propertyIds.add(booking.Property__c);
+        for (Booking__c b : newBookings) {
+            if (b.Property__c != null) {
+                propertyIds.add(b.Property__c);
             }
         }
 
@@ -16,20 +15,34 @@ public class BookingTriggerHandler {
             [SELECT Id, Price_Per_Unit__c FROM Property__c WHERE Id IN :propertyIds]
         );
 
-        for (Booking__c booking : newBookings) {
+        for (Booking__c b : newBookings) {
 
-            if (booking.Status__c == 'Confirmed' && propertyMap.containsKey(booking.Property__c)) {
+            Boolean shouldCreateInvoice = false;
 
-                Property__c property = propertyMap.get(booking.Property__c);
+            if (oldMap == null) {
+                if (b.Status__c == 'Confirmed') {
+                    shouldCreateInvoice = true;
+                }
+            } 
+            else {
+                if (b.Status__c == 'Confirmed' &&
+                    oldMap.get(b.Id).Status__c != 'Confirmed') {
+                    shouldCreateInvoice = true;
+                }
+            }
 
-                Invoice__c invoice = new Invoice__c();
+            if (shouldCreateInvoice && propertyMap.containsKey(b.Property__c)) {
 
-                invoice.Booking__c = booking.Id;
-                invoice.Invoice_Amount__c = property.Price_Per_Unit__c;
-                invoice.Due_Date__c = booking.Booking_Date__c.addDays(7);
-                invoice.Status__c = 'Pending';
+                Property__c prop = propertyMap.get(b.Property__c);
 
-                invoicesToInsert.add(invoice);
+               Invoice__c inv = new Invoice__c();
+inv.Name = 'INV-' + b.Id;
+inv.Booking__c = b.Id;
+inv.Invoice_Amount__c = prop.Price_Per_Unit__c;
+inv.Due_Date__c = b.Booking_Date__c.addDays(7);
+inv.Status__c = 'Pending';
+
+                invoicesToInsert.add(inv);
             }
         }
 
